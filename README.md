@@ -1,70 +1,372 @@
-# Getting Started with Create React App
+# 📚 StudyTrack - Personal Study Dashboard Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, responsive React.js application designed to help students track their learning progress, manage study tasks, and take productive breaks with fun games.
 
-## Available Scripts
+## ✨ Features
 
-In the project directory, you can run:
+### 📊 Dashboard
 
-### `npm start`
+- Welcome message with personalized greeting
+- Quick summary cards showing:
+  - Total number of courses
+  - Overall progress percentage
+  - Today's tasks count
+  - Motivational streak counter
+- Quick action links to navigate to main features
+- Study tips and best practices
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### ➕ Add Course Page
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- Simple form to add new courses
+- Fields:
+  - **Course Title** (required) - e.g., "React.js Fundamentals"
+  - **Course Link** (optional) - YouTube playlist or website URL
+  - **Total Videos** (required) - Total number of lessons/videos
+- Form validation with helpful error messages
+- Success feedback and automatic navigation to Progress page
+- How-it-works guide for new users
 
-### `npm test`
+### 📈 Progress Page
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Display all added courses in responsive grid layout
+- Overall statistics:
+  - Total courses
+  - Completed courses
+  - Overall progress percentage
+  - Total videos watched
+- **Course Cards** with:
+  - Course title and completion badge
+  - Visual progress bar (color changes when complete)
+  - Videos watched / Total videos counter
+  - Motivational messages based on progress
+  - Link to open course resources
+  - Update progress button with expandable form
+  - Delete course option with confirmation
 
-### `npm run build`
+### ✓ Tasks (Study Planner)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Add tasks with title and due date
+- Task management features:
+  - Mark tasks as completed
+  - Delete tasks with confirmation
+  - Task filtering (All, Today, Overdue, Completed)
+- Statistics display:
+  - Total tasks count
+  - Completed tasks count
+  - Overdue tasks count (with warning badge)
+- Visual indicators:
+  - Completed tasks appear faded with strikethrough
+  - Overdue tasks highlighted in red
+  - Dates formatted in readable format
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 🎮 Games Page
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Two fun mini-games to take study breaks:
 
-### `npm run eject`
+#### Rock Paper Scissors
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- Play against computer with random choices
+- Score tracking (wins, losses, draws)
+- Results display (You Won! / You Lost! / Draw)
+- Round reset and score reset options
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+#### Tic Tac Toe
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- 2-player game (local multiplayer)
+- Score tracking for both players and draws
+- Winning line highlighted in gold
+- Turn indicator showing current player
+- Winner detection with celebration message
+- New Game and Reset History buttons
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 📱 Sidebar Navigation
 
-## Learn More
+- Fixed sidebar with gradient background
+- Navigation links:
+  - 📊 Dashboard
+  - ➕ Add Course
+  - 📈 Progress
+  - ✓ Tasks
+  - 🎮 Games
+- Active link highlighting
+- Mobile-responsive with hamburger menu
+- App branding and version info
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 🏗️ Project Structure
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```
+src/
+├── pages/
+│   ├── Dashboard.js         # Home page with overview
+│   ├── AddCourse.js         # Add new course form
+│   ├── Progress.js          # View all courses and progress
+│   ├── Tasks.js             # Task manager and planner
+│   └── Games.js             # Game selection hub
+├── components/
+│   ├── Sidebar.js           # Main navigation component
+│   ├── CourseCard.js        # Reusable course display card
+│   ├── ProgressBar.js       # Reusable progress indicator
+│   └── TaskItem.js          # Reusable task list item
+├── games/
+│   ├── RockPaperScissors.js # RPS game component
+│   └── Tic Tac Toe.js       # Tic Tac Toe game component
+├── redux/
+│   └── store.js             # Redux store with courses & tasks slices
+├── App.js                   # Main app component with routing
+├── App.css                  # All styling (responsive design)
+└── index.js                 # Entry point with Redux provider
+```
 
-### Code Splitting
+## 🔄 State Management (Redux)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Courses Slice
 
-### Analyzing the Bundle Size
+```javascript
+{
+  id: number,
+  title: string,
+  link: string | null,
+  totalVideos: number,
+  watchedVideos: number
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+**Actions:**
 
-### Making a Progressive Web App
+- `addCourse(payload)` - Add new course
+- `updateCourseProgress({id, watchedVideos})` - Update progress
+- `deleteCourse(id)` - Delete a course
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Tasks Slice
 
-### Advanced Configuration
+```javascript
+{
+  id: number,
+  title: string,
+  date: string (ISO format),
+  completed: boolean
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+**Actions:**
 
-### Deployment
+- `addTask(payload)` - Add new task
+- `toggleTaskComplete(id)` - Mark as complete/incomplete
+- `deleteTask(id)` - Delete a task
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 💾 Local Storage
 
-### `npm run build` fails to minify
+All data is persisted to browser's localStorage:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **courses** - Stores all courses JSON
+- **tasks** - Stores all tasks JSON
+
+Data syncs automatically when Redux state changes.
+
+## 🎨 Design System
+
+### Color Scheme
+
+- **Primary Gradient:** #667eea to #764ba2 (Purple)
+- **Success:** #10b981 (Green)
+- **Warning:** #f59e0b (Amber)
+- **Danger:** #ef4444 (Red)
+- **Neutral:** #6b7280 (Gray)
+
+### Typography
+
+- **Font Family:** System fonts (-apple-system, BlinkMacSystemFont, etc.)
+- **Headings:** 600-700 font-weight
+- **Body:** 400 font-weight
+
+### Components
+
+- Card-based layouts with subtle shadows
+- Rounded corners (0.5rem - 1rem)
+- Smooth transitions (0.3s ease)
+- Hover effects on interactive elements
+
+## 📱 Responsive Design
+
+### Breakpoints
+
+- **Desktop:** 1200px+ (full sidebar visible)
+- **Tablet:** 769px - 1199px (responsive grid)
+- **Mobile:** ≤768px (hamburger menu, stacked layout)
+
+### Mobile Features
+
+- Hamburger menu button (top-left)
+- Overlay when menu open
+- Single column layout
+- Touch-friendly button sizes
+
+## 🚀 Getting Started
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm start
+
+# Build for production
+npm build
+```
+
+### First Time Usage
+
+1. **Add Your First Course**
+
+   - Click "Add Course" in sidebar
+   - Fill in course title and total videos
+   - Optionally add course link
+   - Click "Add Course" button
+
+2. **Track Progress**
+
+   - Go to "Progress" page
+   - Click "Update Progress" on any course card
+   - Enter watched videos count
+   - Save to update
+
+3. **Manage Tasks**
+
+   - Click "Tasks" in sidebar
+   - Add task title and due date
+   - Check off completed tasks
+   - Filter by Today, Overdue, or Completed
+
+4. **Take a Break**
+   - Click "Games" in sidebar
+   - Choose Rock Paper Scissors or Tic Tac Toe
+   - Have fun and refresh your mind!
+
+## 🎯 Key Features Explained
+
+### Progress Calculation
+
+```
+Progress % = (watchedVideos / totalVideos) × 100
+Example: 4 videos watched out of 30 = (4/30) × 100 = 13%
+```
+
+### Motivational Messages
+
+- 🚀 0% - "Let's get started!"
+- 💪 1-49% - "Great start! Keep going."
+- 🔥 50-99% - "You're halfway there!"
+- 🎉 100% - "Congratulations! Course completed!"
+
+### Task Filtering
+
+- **All:** Shows all tasks
+- **Today:** Shows tasks with today's date
+- **Overdue:** Shows incomplete tasks with past due dates
+- **Completed:** Shows checked-off tasks
+
+## 📦 Dependencies
+
+### Main Libraries
+
+- **React** 19.1.1 - UI framework
+- **React Router DOM** 7.8.2 - Navigation
+- **Redux Toolkit** 2.9.0 - State management
+- **React Redux** 9.2.0 - Redux integration
+
+### Dev Dependencies
+
+- React Scripts 5.0.1
+- Testing Library (React, DOM, User Event)
+
+## 🎓 Learning Value
+
+This project demonstrates:
+
+- ✅ Functional components with React hooks
+- ✅ Redux Toolkit for state management
+- ✅ Local storage persistence
+- ✅ React Router for SPA navigation
+- ✅ Responsive CSS design
+- ✅ Form handling and validation
+- ✅ Game logic (RPS, Tic Tac Toe)
+- ✅ Component composition and reusability
+- ✅ Conditional rendering
+- ✅ Array filtering and mapping
+- ✅ Date handling and formatting
+
+## 🔧 Customization
+
+### Add More Games
+
+1. Create new component in `src/games/`
+2. Import in `src/pages/Games.js`
+3. Add game card in games menu
+4. Add route logic in selectedGame state
+
+### Change Color Scheme
+
+Edit CSS variables in `App.css`:
+
+- `.sidebar` - Gradient colors
+- `.btn-primary` - Primary button color
+- `.success` / `.danger` / `.warning` - Status colors
+
+### Modify Motivational Messages
+
+Edit conditions in `src/components/CourseCard.js` progress calculation section.
+
+### Add Task Categories
+
+Extend task structure with `category` field and filter by category.
+
+## 📝 Future Enhancements
+
+Potential improvements:
+
+- 🔐 User authentication
+- ☁️ Cloud sync (Firebase/Supabase)
+- 📊 Advanced analytics and charts
+- 🎯 Study goals and milestones
+- 🏆 Achievements and badges
+- 📱 Mobile app (React Native)
+- 🔔 Notifications and reminders
+- 📤 Export study data
+- 🤖 AI study recommendations
+- 📚 Study notes integration
+
+## 🐛 Troubleshooting
+
+### Data Not Persisting
+
+- Check browser's localStorage is enabled
+- Clear cache and reload
+- Check browser console for errors
+
+### Styling Issues
+
+- Ensure App.css is properly imported in App.js
+- Check browser DevTools for CSS conflicts
+- Clear browser cache
+
+### Component Not Rendering
+
+- Verify imports are correct
+- Check Redux store is properly configured
+- Ensure Redux Provider wraps app in index.js
+
+## 📄 License
+
+Personal educational project - Free to use and modify
+
+## 👨‍💻 Author
+
+Built as a comprehensive React learning project transforming an online course platform into a personal study tracking dashboard.
+
+---
+
+**Happy Studying! 📚✨**
+
+For questions or improvements, refer to the component comments throughout the codebase.
