@@ -1,5 +1,5 @@
 import { configureStore, createSlice } from "@reduxjs/toolkit";
-import { notificationSlice } from "./profile/notification";
+// import { notificationSlice } from "./profile/notification";
 
 // Courses Slice
 const coursesSlice = createSlice({
@@ -68,7 +68,7 @@ export const { addTask, toggleTaskComplete, deleteTask } = tasksSlice.actions;
 
 export const store = configureStore({
   reducer: {
-    notification: notificationSlice,
+    // notification: notificationSlice,
     courses: coursesSlice.reducer,
     tasks: tasksSlice.reducer,
   },
