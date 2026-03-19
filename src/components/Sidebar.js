@@ -1,7 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { LogoutIcon } from "@mui/icons-material";
 import { Box } from "@mui/material";
 
 // Sidebar component - main navigation for the study dashboard

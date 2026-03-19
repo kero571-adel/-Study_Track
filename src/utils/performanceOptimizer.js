@@ -164,7 +164,7 @@ export const performanceMetrics = {
   },
 };
 
-export default {
+const performanceOptimizerExport = {
   lazyLoadComponent,
   LoadingFallback,
   withLazyLoad,
@@ -173,3 +173,5 @@ export default {
   CacheHelper,
   performanceMetrics,
 };
+
+export default performanceOptimizerExport;
