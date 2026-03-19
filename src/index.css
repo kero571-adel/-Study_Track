@@ -1,16 +1,80 @@
-*{
+* {
   transition-duration: 0.5s;
 }
+
+/* تحسينات الأداء */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* تحسين الأداء */
+  will-change: scroll-position;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
+}
+
+/* Lazy Loading Animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* تحسين الصور */
+img {
+  max-width: 100%;
+  height: auto;
+  /* Lazy loading تحسين */
+  decoding: async;
+}
+
+/* تحسين الأداء للـ Links */
+a {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* تحسين الأداء للـ Buttons */
+button {
+  cursor: pointer;
+  /* تجنب Flash of Unstyled Content */
+  font-family: inherit;
+}
+
+/* تحسين الأداء للـ Inputs */
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+/* استخدام contain لتحسين الأداء */
+.app-layout {
+  contain: layout style paint;
+}
+
+.main-content {
+  contain: content;
+}
+
+/* تحسين الأداء للـ Animations */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -1,4 +1,13 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+} from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
 
 // Create Auth Context
 const AuthContext = createContext();
@@ -8,79 +17,181 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user from localStorage on mount
+  // Listen for auth state changes
   useEffect(() => {
-    const storedUser = localStorage.getItem("authUser");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-        localStorage.removeItem("authUser");
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      if (authUser) {
+        try {
+          // Get additional user data from Firestore
+          const userDocRef = doc(db, "users", authUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          const userData = {
+            uid: authUser.uid,
+            email: authUser.email,
+            displayName: authUser.displayName || "",
+            photoURL: authUser.photoURL || "",
+            ...userDocSnap.data(),
+          };
+
+          setUser(userData);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setUser({
+            uid: authUser.uid,
+            email: authUser.email,
+            displayName: authUser.displayName || "",
+            photoURL: authUser.photoURL || "",
+          });
+        }
+      } else {
+        setUser(null);
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Register user
-  const register = (userData) => {
-    // Check if email already exists
-    const existingUsers = JSON.parse(localStorage.getItem("users") || "[]");
-    if (existingUsers.some((u) => u.email === userData.email)) {
-      throw new Error("Email already registered");
+  // Register user with email and password
+  const register = async (userData) => {
+    try {
+      // Create user in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        userData.email,
+        userData.password
+      );
+
+      const authUser = userCredential.user;
+
+      // Update display name
+      await updateProfile(authUser, {
+        displayName: userData.name,
+      });
+
+      // Save additional user data to Firestore
+      const userDocRef = doc(db, "users", authUser.uid);
+      await setDoc(userDocRef, {
+        name: userData.name,
+        email: userData.email,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        courses: [],
+        tasks: [],
+        progress: 0,
+      });
+
+      // Update local user state
+      const newUser = {
+        uid: authUser.uid,
+        email: authUser.email,
+        displayName: userData.name,
+        name: userData.name,
+        createdAt: new Date().toISOString(),
+        courses: [],
+        tasks: [],
+        progress: 0,
+      };
+
+      setUser(newUser);
+      return newUser;
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
     }
-
-    // Store user data
-    const newUser = {
-      id: Date.now().toString(),
-      ...userData,
-      createdAt: new Date().toISOString(),
-    };
-
-    existingUsers.push(newUser);
-    localStorage.setItem("users", JSON.stringify(existingUsers));
-
-    // Auto login after registration
-    const userToStore = { ...newUser };
-    delete userToStore.password; // Don't store password in auth user
-    setUser(userToStore);
-    localStorage.setItem("authUser", JSON.stringify(userToStore));
-
-    return userToStore;
   };
 
-  // Login user
-  const login = (email, password) => {
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const foundUser = users.find((u) => u.email === email);
+  // Login user with email and password
+  const login = async (email, password) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-    if (!foundUser) {
-      throw new Error("User not found");
+      const authUser = userCredential.user;
+
+      // Get user data from Firestore
+      const userDocRef = doc(db, "users", authUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      const userData = {
+        uid: authUser.uid,
+        email: authUser.email,
+        displayName: authUser.displayName || "",
+        ...userDocSnap.data(),
+      };
+
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
     }
-
-    if (foundUser.password !== password) {
-      throw new Error("Invalid password");
-    }
-
-    const userToStore = { ...foundUser };
-    delete userToStore.password;
-    setUser(userToStore);
-    localStorage.setItem("authUser", JSON.stringify(userToStore));
-
-    return userToStore;
   };
 
   // Logout user
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("authUser");
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+      throw error;
+    }
   };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  // Update user profile
+  const updateUserProfile = async (updatedData) => {
+    try {
+      if (!auth.currentUser) {
+        throw new Error("No user logged in");
+      }
+
+      // Update in Firebase Auth
+      if (updatedData.name) {
+        await updateProfile(auth.currentUser, {
+          displayName: updatedData.name,
+        });
+      }
+
+      // Update in Firestore
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      await setDoc(
+        userDocRef,
+        {
+          ...updatedData,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+
+      // Update local state
+      setUser((prevUser) => ({
+        ...prevUser,
+        ...updatedData,
+        updatedAt: new Date().toISOString(),
+      }));
+
+      return true;
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      throw error;
+    }
+  };
+
+  const value = {
+    user,
+    loading,
+    register,
+    login,
+    logout,
+    updateUserProfile,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 // Custom hook to use auth context

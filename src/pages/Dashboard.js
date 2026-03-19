@@ -1,10 +1,19 @@
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Helmet } from "react-helmet-async";
+import { useSEO } from "../hooks/useSEO";
+import { Container, Typography } from "@mui/material";
 
 // Dashboard page - displays study summary and overview with animations
 export default function Dashboard() {
+  // تحسين SEO
+  useSEO({
+    title: "لوحة التحكم",
+    description: "تتبع دوراتك والمهام والتقدم الدراسي في مكان واحد",
+    keywords: "لوحة تحكم، متتبع الدراسة، دورات، تقدم",
+    url: "https://yoursite.com/",
+  });
+
   const courses = useSelector((state) => state.courses.items);
   const tasks = useSelector((state) => state.tasks.items);
 
@@ -47,25 +56,12 @@ export default function Dashboard() {
   };
 
   return (
-    <>
-      <Helmet>
-        <title>Study Dashboard | Study Tracker</title>
-        <meta
-          name="description"
-          content="Track your courses, tasks, and study progress all in one place."
-        />
-        <meta
-          name="keywords"
-          content="dashboard, study tracker, courses, progress"
-        />
-        <meta property="og:title" content="Study Dashboard | Study Tracker" />
-        <meta
-          property="og:description"
-          content="Track your courses and study progress"
-        />
-        <meta property="og:type" content="website" />
-      </Helmet>
-
+    <Container
+      sx={{
+        padding: { xs: "20px", md: "40px" },
+        mt: { xs: "45px", md: "0px" },
+      }}
+    >
       <div className="page dashboard-page">
         <motion.div
           className="page-header"
@@ -73,7 +69,9 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1>📊 Welcome to StudyTrack</h1>
+          <Typography sx={{ fontSize: { xs: "1.2rem", md: "2.5rem" } }}>
+            📊 Welcome to StudyTrack
+          </Typography>
           <p className="page-subtitle">Your personal study dashboard</p>
         </motion.div>
 
@@ -229,21 +227,33 @@ export default function Dashboard() {
             initial="hidden"
             animate="visible"
           >
-            <motion.div className="tip" variants={itemVariants}>
+            <motion.div
+              className="tip"
+              variants={itemVariants}
+              style={{ width: "90%" }}
+            >
               <strong>Consistency is Key:</strong> Study a little bit every day
               rather than cramming.
             </motion.div>
-            <motion.div className="tip" variants={itemVariants}>
+            <motion.div
+              className="tip"
+              variants={itemVariants}
+              style={{ width: "90%" }}
+            >
               <strong>Track Progress:</strong> Keep your courses updated to stay
               motivated.
             </motion.div>
-            <motion.div className="tip" variants={itemVariants}>
+            <motion.div
+              className="tip"
+              variants={itemVariants}
+              style={{ width: "90%" }}
+            >
               <strong>Plan Your Tasks:</strong> Break down your study into
               manageable tasks.
             </motion.div>
           </motion.div>
         </motion.div>
       </div>
-    </>
+    </Container>
   );
 }

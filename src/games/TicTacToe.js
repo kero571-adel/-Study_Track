@@ -82,12 +82,12 @@ export default function TicTacToe() {
 
     // Player move
     const newBoard = [...board];
-    newBoard[index] = "X";
+    newBoard[index] = isXNext ? "X" : "O";
     setBoard(newBoard);
+    setIsXNext(!isXNext);
 
     // Check if game ends after player move
     if (calculateWinner(newBoard) || newBoard.every((s) => s !== null)) {
-      setIsXNext(false);
       return;
     }
 
@@ -101,9 +101,6 @@ export default function TicTacToe() {
         setIsXNext(true);
         setIsComputerThinking(false);
       }, 600);
-    } else {
-      // PvP mode
-      setIsXNext(!isXNext);
     }
   };
 
@@ -220,8 +217,8 @@ export default function TicTacToe() {
           style={{ marginTop: "2rem" }}
         >
           <p>
-            🎮 First to get 3 in a row (horizontally, vertically, or
-            diagonally) wins!
+            🎮 First to get 3 in a row (horizontally, vertically, or diagonally)
+            wins!
           </p>
         </motion.div>
       </div>
@@ -312,9 +309,7 @@ export default function TicTacToe() {
           <div className="status-turn">
             {gameMode === "pvc" ? (
               isComputerThinking ? (
-                <>
-                  🤔 Computer is thinking...
-                </>
+                <>🤔 Computer is thinking...</>
               ) : isXNext ? (
                 <>
                   Your Turn: <span className="turn-player turn-x">X</span>

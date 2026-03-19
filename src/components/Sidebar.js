@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { LogoutIcon } from "@mui/icons-material";
+import { Box } from "@mui/material";
 
 // Sidebar component - main navigation for the study dashboard
 export default function Sidebar() {
@@ -28,13 +29,15 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile toggle button */}
-      <button
-        className="sidebar-mobile-toggle"
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-        title="Toggle menu"
-      >
-        ☰
-      </button>
+      <Box sx={{ display: isMobileOpen ? "none" : "block" }}>
+        <button
+          className="sidebar-mobile-toggle"
+          onClick={() => setIsMobileOpen(!isMobileOpen)}
+          title="Toggle menu"
+        >
+          ☰
+        </button>
+      </Box>
 
       {/* Sidebar overlay for mobile */}
       {isMobileOpen && (
