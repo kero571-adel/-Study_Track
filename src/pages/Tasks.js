@@ -13,7 +13,7 @@ export default function Tasks() {
     date: "",
   });
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState("all"); // all, today, overdue, completed
+  const [filter, setFilter] = useState("today"); // all, today, overdue, completed
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -230,6 +230,14 @@ export default function Tasks() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.3 }}
           >
+             <motion.button
+              className={`filter-btn ${filter === "today" ? "active" : ""}`}
+              onClick={() => setFilter("today")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Today
+            </motion.button>
             <motion.button
               className={`filter-btn ${filter === "all" ? "active" : ""}`}
               onClick={() => setFilter("all")}
@@ -237,14 +245,6 @@ export default function Tasks() {
               whileTap={{ scale: 0.95 }}
             >
               All ({tasks.length})
-            </motion.button>
-            <motion.button
-              className={`filter-btn ${filter === "today" ? "active" : ""}`}
-              onClick={() => setFilter("today")}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Today
             </motion.button>
             {overdueCount > 0 && (
               <motion.button

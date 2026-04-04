@@ -62,7 +62,6 @@ export default function Register() {
         email: formData.email,
         password: formData.password,
       });
-
       navigate("/");
     } catch (err) {
       console.error("Registration error:", err);
