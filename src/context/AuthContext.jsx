@@ -25,7 +25,6 @@ export const AuthProvider = ({ children }) => {
           // Get additional user data from Firestore
           const userDocRef = doc(db, "users", authUser.uid);
           const userDocSnap = await getDoc(userDocRef);
-
           const userData = {
             uid: authUser.uid,
             email: authUser.email,
@@ -77,9 +76,7 @@ export const AuthProvider = ({ children }) => {
         email: userData.email,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        courses: [],
-        tasks: [],
-        progress: 0,
+        progress: 0, // دي ممكن تفضل لأنها رقم بسيط
       });
 
       // Update local user state

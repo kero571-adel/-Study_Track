@@ -57,19 +57,25 @@ export const updateUserData = async (userId, data) => {
  */
 export const addCourse = async (userId, courseData) => {
   try {
+    console.log("🔄 Adding course for user:", userId, courseData); // ✅ تتبع
+    
     const coursesRef = collection(db, "users", userId, "courses");
     const docRef = await addDoc(coursesRef, {
       ...courseData,
+      watchedVideos: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
+    
+    console.log("✅ Course added with ID:", docRef.id); // ✅ تتبع
     return docRef.id;
   } catch (error) {
-    console.error("Error adding course:", error);
+    console.error("❌ Error adding course:", error); // ✅ تتبع مفصّل
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
     throw error;
   }
 };
-
 /**
  * Get all courses for a user
  */
@@ -132,6 +138,8 @@ export const deleteCourse = async (userId, courseId) => {
  */
 export const addTask = async (userId, taskData) => {
   try {
+    console.log("🔄 Adding task for user:", userId, taskData); // ✅ تتبع
+    
     const tasksRef = collection(db, "users", userId, "tasks");
     const docRef = await addDoc(tasksRef, {
       ...taskData,
@@ -139,13 +147,16 @@ export const addTask = async (userId, taskData) => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
+    
+    console.log("✅ Task added with ID:", docRef.id); // ✅ تتبع
     return docRef.id;
   } catch (error) {
-    console.error("Error adding task:", error);
+    console.error("❌ Error adding task:", error);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
     throw error;
   }
 };
-
 /**
  * Get all tasks for a user
  */

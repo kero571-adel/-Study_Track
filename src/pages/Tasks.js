@@ -1,19 +1,40 @@
-import { useState } from "react";
+// pages/Tasks.js
+import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import TaskItem from "../components/TaskItem";
-import { addTask, toggleTaskComplete, deleteTask } from "../redux/store";
+// ✅ استيراد الـ Async Thunks الجديدة
+import {
+  fetchTasks,
+  addTaskAsync,
+  toggleTaskCompleteAsync,
+  deleteTaskAsync,
+} from "../redux/store";
 import { motion } from "framer-motion";
 import { Container } from "@mui/material";
-// Tasks page - study planner for managing tasks and deadlines with animations
+// ✅ استيراد الهوك الخاص بالمصادقة
+import { useAuth } from "../context/AuthContext";
+
 export default function Tasks() {
   const dispatch = useDispatch();
+  const { user, loading: authLoading } = useAuth(); // ✅ جلب المستخدم وحالة التحميل
+
   const tasks = useSelector((state) => state.tasks.items);
+  const tasksStatus = useSelector((state) => state.tasks.status); // ✅ حالة الجلب من Redux
+
   const [formData, setFormData] = useState({
     title: "",
     date: "",
   });
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("today"); // all, today, overdue, completed
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ حالة التحميل للزر
+
+  // ✅ جلب التاسكات من Firebase أول ما الصفحة تفتح والمستخدم مسجّل
+  useEffect(() => {
+    if (user && tasksStatus === "idle") {
+      dispatch(fetchTasks(user.uid));
+    }
+  }, [user, dispatch, tasksStatus]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,7 +44,7 @@ export default function Tasks() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -35,24 +56,62 @@ export default function Tasks() {
       setError("Due date is required");
       return;
     }
+    if (!user) {
+      setError("Please login first");
+      return;
+    }
 
-    dispatch(
-      addTask({
-        title: formData.title.trim(),
-        date: formData.date,
-      })
-    );
-
-    setFormData({ title: "", date: "" });
+    setIsSubmitting(true);
+    try {
+      // ✅ إرسال التاسك لـ Firebase عبر Redux Thunk
+      await dispatch(
+        addTaskAsync({
+          userId: user.uid,
+          data: {
+            // ✅ أضف "data:" هنا
+            title: formData.title.trim(),
+            date: formData.date,
+          },
+        })
+      ).unwrap(); // ✅ لالتقاط الأخطاء من Firebase
+      setFormData({ title: "", date: "" });
+    } catch (err) {
+      setError("Failed to add task: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleToggleComplete = (taskId) => {
-    dispatch(toggleTaskComplete(taskId));
+  const handleToggleComplete = async (taskId) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || !user) return;
+
+    try {
+      await dispatch(
+        toggleTaskCompleteAsync({
+          userId: user.uid, // ✅ ضروري لتحديد مسار المستخدم في Firestore
+          taskId,
+          completed: !task.completed,
+        })
+      ).unwrap();
+    } catch (err) {
+      console.error("Failed to toggle task:", err);
+    }
   };
 
-  const handleDeleteTask = (taskId) => {
+  const handleDeleteTask = async (taskId) => {
+    if (!user) return;
     if (window.confirm("Delete this task?")) {
-      dispatch(deleteTask(taskId));
+      try {
+        await dispatch(
+          deleteTaskAsync({
+            userId: user.uid, // ✅ ضروري لتحديد مسار المستخدم في Firestore
+            taskId,
+          })
+        ).unwrap();
+      } catch (err) {
+        console.error("Failed to delete task:", err);
+      }
     }
   };
 
@@ -100,6 +159,39 @@ export default function Tasks() {
       transition: { duration: 0.3 },
     },
   };
+
+  // ✅ عرض شاشة تحميل أثناء انتظار المصادقة أو جلب البيانات
+  if (authLoading || tasksStatus === "loading") {
+    return (
+      <Container
+        sx={{
+          padding: { xs: "20px", md: "40px" },
+          mt: { xs: "45px", md: "0px" },
+        }}
+      >
+        <div className="loading">Loading your tasks...</div>
+      </Container>
+    );
+  }
+
+  // ✅ إذا لم يكن المستخدم مسجلاً، اعرض رسالة التوجيه
+  if (!user) {
+    return (
+      <Container
+        sx={{
+          padding: { xs: "20px", md: "40px" },
+          mt: { xs: "45px", md: "0px" },
+        }}
+      >
+        <div className="auth-redirect">
+          <h2>🔐 Please login to manage your tasks</h2>
+          <a href="/login" className="btn btn-primary">
+            Go to Login
+          </a>
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <div className="page tasks-page">
@@ -217,8 +309,9 @@ export default function Tasks() {
                 className="btn btn-primary"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                disabled={isSubmitting} // ✅ تعطيل الزر أثناء الإرسال
               >
-                Add Task
+                {isSubmitting ? "Adding..." : "Add Task"} {/* ✅ نص متغير */}
               </motion.button>
             </form>
           </div>
@@ -230,7 +323,7 @@ export default function Tasks() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.3 }}
           >
-             <motion.button
+            <motion.button
               className={`filter-btn ${filter === "today" ? "active" : ""}`}
               onClick={() => setFilter("today")}
               whileHover={{ scale: 1.05 }}
@@ -267,6 +360,7 @@ export default function Tasks() {
           </motion.div>
 
           {/* Tasks List */}
+          {/* Tasks List */}
           {filteredTasks.length === 0 ? (
             <motion.div
               className="empty-state"
@@ -274,15 +368,7 @@ export default function Tasks() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <p>
-                {filter === "all" &&
-                  "📝 No tasks yet. Create one to get started!"}
-                {filter === "today" &&
-                  "📝 No tasks for today. Enjoy your break!"}
-                {filter === "overdue" &&
-                  "✓ No overdue tasks. Great job staying on track!"}
-                {filter === "completed" && "📝 No completed tasks yet."}
-              </p>
+              <p>...</p>
             </motion.div>
           ) : (
             <motion.div
@@ -290,9 +376,17 @@ export default function Tasks() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
+              key={`${filter}-${tasks.length}`} // ✅ مفتاح إجباري لإعادة الأنيميشن
             >
               {filteredTasks.map((task) => (
-                <motion.div key={task.id} variants={itemVariants}>
+                <motion.div
+                  key={task.id}
+                  variants={itemVariants}
+                  // ✅ أضف هذه الخصائص عشان تضمن ظهور العنصر
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                   <TaskItem
                     task={task}
                     onToggle={handleToggleComplete}

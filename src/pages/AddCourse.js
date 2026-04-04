@@ -1,13 +1,20 @@
+// pages/AddCourse.js
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { addCourse } from "../redux/store";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Container } from "@mui/material";
-// AddCourse page - allows users to add new courses to track with animations
+
+// ✅ استيراد الـ Async Action الجديد
+import { addCourseAsync } from "../redux/store";
+// ✅ استيراد الهوك الخاص بالمصادقة
+import { useAuth } from "../context/AuthContext";
+
 export default function AddCourse() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { user } = useAuth(); // ✅ جلب بيانات المستخدم الحالي
+
   const [formData, setFormData] = useState({
     title: "",
     link: "",
@@ -15,6 +22,7 @@ export default function AddCourse() {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ حالة التحميل للزر
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,37 +34,54 @@ export default function AddCourse() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Validation
+    console.log("📝 Form submitted:", formData); // ✅ تتبع
+
     if (!formData.title.trim()) {
       setError("Course title is required");
       return;
     }
     if (!formData.totalVideos || formData.totalVideos <= 0) {
-      setError("Total videos must be a positive number");
+      setError("Total videos must be positive");
       return;
     }
-    dispatch(
-      addCourse({
-        title: formData.title.trim(),
-        link: formData.link.trim() || null,
-        totalVideos: parseInt(formData.totalVideos),
-      })
-    );
+    if (!user) {
+      setError("Please login first");
+      return;
+    }
 
-    // Show success message and reset form
-    setSuccess(true);
-    setFormData({ title: "", link: "", totalVideos: "" });
+    console.log("👤 Current user:", user.uid); // ✅ تتبع
 
-    // Navigate to progress page after 2 seconds
-    setTimeout(() => {
-      navigate("/progress");
-    }, 2000);
+    setIsSubmitting(true);
+    try {
+      console.log("🚀 Dispatching addCourseAsync..."); // ✅ تتبع
+
+      const result = await dispatch(
+        addCourseAsync({
+          userId: user.uid,
+          data: {
+            title: formData.title.trim(),
+            link: formData.link.trim() || null,
+            totalVideos: parseInt(formData.totalVideos),
+          },
+        })
+      ).unwrap();
+
+      console.log("✅ Course added successfully:", result); // ✅ تتبع
+
+      setSuccess(true);
+      setFormData({ title: "", link: "", totalVideos: "" });
+      setTimeout(() => navigate("/progress"), 2000);
+    } catch (err) {
+      console.error("💥 Failed to add course:", err); // ✅ تتبع
+      setError("Failed: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
   // Animation variants
   const formGroupVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -201,8 +226,9 @@ export default function AddCourse() {
               animate="visible"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              disabled={isSubmitting} // ✅ تعطيل الزر أثناء الإرسال
             >
-              Add Course
+              {isSubmitting ? "Adding..." : "Add Course"} {/* ✅ نص متغير */}
             </motion.button>
           </motion.form>
 

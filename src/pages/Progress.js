@@ -1,26 +1,64 @@
+// pages/Progress.js
+import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import CourseCard from "../components/CourseCard";
-import { updateCourseProgress, deleteCourse } from "../redux/store";
+// ✅ استيراد الـ Async Thunks الجديدة
+import { 
+  fetchCourses, 
+  updateCourseProgressAsync, 
+  deleteCourseAsync 
+} from "../redux/store";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Container } from "@mui/material";
-// Progress page - displays all courses with progress tracking and animations
+// ✅ استيراد الهوك الخاص بالمصادقة
+import { useAuth } from "../context/AuthContext";
+
 export default function Progress() {
   const dispatch = useDispatch();
+  const { user, loading: authLoading } = useAuth(); // ✅ جلب المستخدم وحالة التحميل
+  
   const courses = useSelector((state) => state.courses.items);
+  const coursesStatus = useSelector((state) => state.courses.status); // ✅ حالة الجلب من Redux
 
-  const handleUpdateProgress = (courseId, watchedVideos) => {
-    dispatch(
-      updateCourseProgress({
-        id: courseId,
-        watchedVideos: parseInt(watchedVideos),
-      })
-    );
+  // ✅ جلب الكورسات من Firebase أول ما الصفحة تفتح والمستخدم مسجّل
+  useEffect(() => {
+    if (user && coursesStatus === "idle") {
+      dispatch(fetchCourses(user.uid));
+    }
+  }, [user, dispatch, coursesStatus]);
+
+  // ✅ دالة تحديث التقدم - الآن غير متزامنة وتتصل بـ Firebase
+  const handleUpdateProgress = async (courseId, watchedVideos) => {
+    if (!user) return;
+    try {
+      await dispatch(
+        updateCourseProgressAsync({
+          userId: user.uid, // ✅ ضروري لتحديد مسار المستخدم في Firestore
+          courseId,
+          watchedVideos: parseInt(watchedVideos),
+        })
+      ).unwrap(); // ✅ لالتقاط الأخطاء من Firebase
+    } catch (err) {
+      console.error("Failed to update progress:", err);
+      // يمكنك إضافة setError هنا لعرض رسالة للمستخدم إذا أردت
+    }
   };
 
-  const handleDeleteCourse = (courseId) => {
+  // ✅ دالة حذف الكورس - الآن غير متزامنة وتتصل بـ Firebase
+  const handleDeleteCourse = async (courseId) => {
+    if (!user) return;
     if (window.confirm("Are you sure you want to delete this course?")) {
-      dispatch(deleteCourse(courseId));
+      try {
+        await dispatch(
+          deleteCourseAsync({
+            userId: user.uid, // ✅ ضروري لتحديد مسار المستخدم في Firestore
+            courseId,
+          })
+        ).unwrap();
+      } catch (err) {
+        console.error("Failed to delete course:", err);
+      }
     }
   };
 
@@ -54,6 +92,27 @@ export default function Progress() {
       transition: { duration: 0.4 },
     },
   };
+
+  // ✅ عرض شاشة تحميل أثناء انتظار المصادقة أو جلب البيانات
+  if (authLoading || coursesStatus === "loading") {
+    return (
+      <Container sx={{ padding: { xs: "20px", md: "40px" }, mt: { xs: "45px", md: "0px" } }}>
+        <div className="loading">Loading your progress...</div>
+      </Container>
+    );
+  }
+
+  // ✅ إذا لم يكن المستخدم مسجلاً، اعرض رسالة التوجيه
+  if (!user) {
+    return (
+      <Container sx={{ padding: { xs: "20px", md: "40px" }, mt: { xs: "45px", md: "0px" } }}>
+        <div className="auth-redirect">
+          <h2>🔐 Please login to track your progress</h2>
+          <Link to="/login" className="btn btn-primary">Go to Login</Link>
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <Container
@@ -144,7 +203,7 @@ export default function Progress() {
             initial="hidden"
             animate="visible"
           >
-            {courses.map((course, index) => (
+            {courses.map((course) => (
               <motion.div key={course.id} variants={itemVariants}>
                 <CourseCard
                   course={course}
