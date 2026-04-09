@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import CourseCard from "../components/CourseCard";
+import PageLoader from "../components/PageLoader";
 // ✅ استيراد الـ Async Thunks الجديدة
 import { 
   fetchCourses, 
@@ -95,11 +96,7 @@ export default function Progress() {
 
   // ✅ عرض شاشة تحميل أثناء انتظار المصادقة أو جلب البيانات
   if (authLoading || coursesStatus === "loading") {
-    return (
-      <Container sx={{ padding: { xs: "20px", md: "40px" }, mt: { xs: "45px", md: "0px" } }}>
-        <div className="loading">Loading your progress...</div>
-      </Container>
-    );
+    return <PageLoader />;
   }
 
   // ✅ إذا لم يكن المستخدم مسجلاً، اعرض رسالة التوجيه

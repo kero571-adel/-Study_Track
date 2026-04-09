@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Container } from "@mui/material";
-
+import PageLoader from "../components/PageLoader";
 // ✅ استيراد الـ Async Action الجديد
 import { addCourseAsync } from "../redux/store";
 // ✅ استيراد الهوك الخاص بالمصادقة
@@ -13,7 +13,7 @@ import { useAuth } from "../context/AuthContext";
 export default function AddCourse() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user } = useAuth(); // ✅ جلب بيانات المستخدم الحالي
+  const { user, loading: authLoading } = useAuth(); // ✅ جلب بيانات المستخدم الحالي
 
   const [formData, setFormData] = useState({
     title: "",
@@ -94,7 +94,9 @@ export default function AddCourse() {
       },
     }),
   };
-
+  if (authLoading) {
+    return <PageLoader />;
+  }
   return (
     <div className="page add-course-page">
       <Container

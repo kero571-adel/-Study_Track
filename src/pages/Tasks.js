@@ -1,6 +1,7 @@
 // pages/Tasks.js
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import PageLoader from "../components/PageLoader";
 import TaskItem from "../components/TaskItem";
 // ✅ استيراد الـ Async Thunks الجديدة
 import {
@@ -162,16 +163,7 @@ export default function Tasks() {
 
   // ✅ عرض شاشة تحميل أثناء انتظار المصادقة أو جلب البيانات
   if (authLoading || tasksStatus === "loading") {
-    return (
-      <Container
-        sx={{
-          padding: { xs: "20px", md: "40px" },
-          mt: { xs: "45px", md: "0px" },
-        }}
-      >
-        <div className="loading">Loading your tasks...</div>
-      </Container>
-    );
+    return <PageLoader />;
   }
 
   // ✅ إذا لم يكن المستخدم مسجلاً، اعرض رسالة التوجيه
