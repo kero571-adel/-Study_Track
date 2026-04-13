@@ -3,14 +3,14 @@ import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import CourseCard from "../components/CourseCard";
 import PageLoader from "../components/PageLoader";
+import { motion, AnimatePresence } from "framer-motion";
 // ✅ استيراد الـ Async Thunks الجديدة
-import { 
-  fetchCourses, 
-  updateCourseProgressAsync, 
-  deleteCourseAsync 
+import {
+  fetchCourses,
+  updateCourseProgressAsync,
+  deleteCourseAsync,
 } from "../redux/store";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { Container } from "@mui/material";
 // ✅ استيراد الهوك الخاص بالمصادقة
 import { useAuth } from "../context/AuthContext";
@@ -18,7 +18,7 @@ import { useAuth } from "../context/AuthContext";
 export default function Progress() {
   const dispatch = useDispatch();
   const { user, loading: authLoading } = useAuth(); // ✅ جلب المستخدم وحالة التحميل
-  
+
   const courses = useSelector((state) => state.courses.items);
   const coursesStatus = useSelector((state) => state.courses.status); // ✅ حالة الجلب من Redux
 
@@ -102,10 +102,17 @@ export default function Progress() {
   // ✅ إذا لم يكن المستخدم مسجلاً، اعرض رسالة التوجيه
   if (!user) {
     return (
-      <Container sx={{ padding: { xs: "20px", md: "40px" }, mt: { xs: "45px", md: "0px" } }}>
+      <Container
+        sx={{
+          padding: { xs: "20px", md: "40px" },
+          mt: { xs: "45px", md: "0px" },
+        }}
+      >
         <div className="auth-redirect">
           <h2>🔐 Please login to track your progress</h2>
-          <Link to="/login" className="btn btn-primary">Go to Login</Link>
+          <Link to="/login" className="btn btn-primary">
+            Go to Login
+          </Link>
         </div>
       </Container>
     );
@@ -195,13 +202,24 @@ export default function Progress() {
           </motion.div>
         ) : (
           <motion.div
-            className="courses-grid"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
+          className="courses-grid"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"  // ✅ يشتغل لما العنصر يدخل الشاشة
+          viewport={{ once: true, amount: 0.2 }}  // ✅ يشتغل مرة واحدة + يظهر لما 20% من العنصر ظاهر
+          key={`courses-grid-${courses.length}`}  // ✅ مفتاح إجباري لإعادة الأنيميشن
+        >
+          <AnimatePresence>
             {courses.map((course) => (
-              <motion.div key={course.id} variants={itemVariants}>
+              <motion.div
+                key={course.id}
+                variants={itemVariants}
+                // ✅ الحل الأهم: إضافة الأنيميشن مباشرة بدل الاعتماد على الـ variants المورثة
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                layout  // ✅ لإعادة حساب الـ layout عند التغيير
+              >
                 <CourseCard
                   course={course}
                   onUpdate={handleUpdateProgress}
@@ -209,7 +227,8 @@ export default function Progress() {
                 />
               </motion.div>
             ))}
-          </motion.div>
+          </AnimatePresence>
+        </motion.div>
         )}
       </div>
     </Container>

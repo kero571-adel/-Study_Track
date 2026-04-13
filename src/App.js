@@ -6,7 +6,7 @@ import Sidebar from "./components/Sidebar";
 import { AuthProvider, useAuth } from "./context/AuthContext"; // ✅ أضفنا useAuth
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LoadingFallback } from "./utils/performanceOptimizer";
-
+import { LanguageProvider } from "./context/LanguageContext";
 // Lazy load pages for code splitting
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const AddCourse = lazy(() => import("./pages/AddCourse"));
@@ -45,26 +45,53 @@ function MigrationToast({ courses, tasks, onClose }) {
           to { transform: translateX(0); opacity: 1; }
         }
       `}</style>
-      
-      <h4 style={{ margin: "0 0 8px 0", fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+
+      <h4
+        style={{
+          margin: "0 0 8px 0",
+          fontSize: "16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+        }}
+      >
         🎉 Welcome Back!
       </h4>
-      <p style={{ margin: "0 0 12px 0", fontSize: "14px", opacity: 0.9, lineHeight: "1.4" }}>
+      <p
+        style={{
+          margin: "0 0 12px 0",
+          fontSize: "14px",
+          opacity: 0.9,
+          lineHeight: "1.4",
+        }}
+      >
         We migrated your data to the cloud:
       </p>
-      
-      <div style={{ display: "flex", gap: "20px", marginBottom: "12px", padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.2)" }}>
+
+      <div
+        style={{
+          display: "flex",
+          gap: "20px",
+          marginBottom: "12px",
+          padding: "8px 0",
+          borderTop: "1px solid rgba(255,255,255,0.2)",
+        }}
+      >
         <div style={{ textAlign: "center" }}>
-          <strong style={{ fontSize: "20px", display: "block" }}>{courses}</strong>
+          <strong style={{ fontSize: "20px", display: "block" }}>
+            {courses}
+          </strong>
           <span style={{ fontSize: "12px", opacity: 0.8 }}>Courses</span>
         </div>
         <div style={{ textAlign: "center" }}>
-          <strong style={{ fontSize: "20px", display: "block" }}>{tasks}</strong>
+          <strong style={{ fontSize: "20px", display: "block" }}>
+            {tasks}
+          </strong>
           <span style={{ fontSize: "12px", opacity: 0.8 }}>Tasks</span>
         </div>
       </div>
-      
-      <button 
+
+      <button
         onClick={onClose}
         style={{
           background: "white",
@@ -78,8 +105,8 @@ function MigrationToast({ courses, tasks, onClose }) {
           width: "100%",
           transition: "transform 0.2s",
         }}
-        onMouseOver={(e) => e.target.style.transform = "scale(1.05)"}
-        onMouseOut={(e) => e.target.style.transform = "scale(1)"}
+        onMouseOver={(e) => (e.target.style.transform = "scale(1.05)")}
+        onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
       >
         Got it! ✓
       </button>
@@ -103,7 +130,7 @@ function AppContent() {
         tasks: user.migratedData.tasks || 0,
       });
       setShowMigration(true);
-      
+
       // إخفاء الرسالة تلقائيًا بعد 6 ثواني
       const timer = setTimeout(() => setShowMigration(false), 6000);
       return () => clearTimeout(timer);
@@ -122,12 +149,15 @@ function AppContent() {
       )}
 
       {/* باقي التطبيق */}
+
       <Routes>
         {/* Public Auth Routes */}
         <Route
           path="/login"
           element={
-            <Suspense fallback={<LoadingFallback message="جاري تحميل صفحة الدخول..." />}>
+            <Suspense
+              fallback={<LoadingFallback message="جاري تحميل صفحة الدخول..." />}
+            >
               <Login />
             </Suspense>
           }
@@ -135,7 +165,11 @@ function AppContent() {
         <Route
           path="/register"
           element={
-            <Suspense fallback={<LoadingFallback message="جاري تحميل صفحة التسجيل..." />}>
+            <Suspense
+              fallback={
+                <LoadingFallback message="جاري تحميل صفحة التسجيل..." />
+              }
+            >
               <Register />
             </Suspense>
           }
@@ -149,7 +183,11 @@ function AppContent() {
               <div className="app-layout">
                 <Sidebar />
                 <main className="main-content">
-                  <Suspense fallback={<LoadingFallback message="جاري تحميل المحتوى..." />}>
+                  <Suspense
+                    fallback={
+                      <LoadingFallback message="جاري تحميل المحتوى..." />
+                    }
+                  >
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/add-course" element={<AddCourse />} />
@@ -174,8 +212,10 @@ function AppContent() {
 // ========================================
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }

@@ -78,3 +78,16 @@ select {
     transition-duration: 0.01ms !important;
   }
 }
+/* انتقال سلس عند تغيير اللغة */
+.sidebar, .nav-link, .btn {
+  transition: all 0.3s ease-in-out;
+}
+
+/* دعم الاتجاهين للعناصر */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="ltr"] {
+  text-align: left;
+}

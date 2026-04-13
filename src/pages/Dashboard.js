@@ -1,21 +1,63 @@
-import { useSelector } from "react-redux";
+// pages/Dashboard.js
+import { useEffect } from "react"; // ✅ أضف هذا الاستيراد
+import { useSelector, useDispatch } from "react-redux"; // ✅ أضف useDispatch
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useSEO } from "../hooks/useSEO";
 import { Container, Typography } from "@mui/material";
+import { useSEO } from "../hooks/useSEO";
+import PageLoader from "../components/PageLoader"; // ✅ أضف الـ Loader
+// ✅ استيراد الـ Async Thunks للجلب
+import { fetchCourses, fetchTasks } from "../redux/store";
+import { useAuth } from "../context/AuthContext"; // ✅ لجلب المستخدم
 
-// Dashboard page - displays study summary and overview with animations
 export default function Dashboard() {
+  const dispatch = useDispatch(); // ✅ ضروري لاستخدام الـ Thunks
+  const { user, loading: authLoading } = useAuth(); // ✅ جلب حالة المصادقة
+  
   // تحسين SEO
   useSEO({
-    title: "لوحة التحكم",
+    title: "لوحة التحكم | StudyTrack",
     description: "تتبع دوراتك والمهام والتقدم الدراسي في مكان واحد",
     keywords: "لوحة تحكم، متتبع الدراسة، دورات، تقدم",
     url: "https://yoursite.com/",
   });
 
+  // ✅ جلب البيانات من Redux
   const courses = useSelector((state) => state.courses.items);
   const tasks = useSelector((state) => state.tasks.items);
+  const coursesStatus = useSelector((state) => state.courses.status);
+  const tasksStatus = useSelector((state) => state.tasks.status);
+
+  // ✅ جلب البيانات من Firebase عند تحميل الصفحة
+  useEffect(() => {
+    if (user) {
+      // جلب الكورسات لو حالتها idle
+      if (coursesStatus === "idle") {
+        dispatch(fetchCourses(user.uid));
+      }
+      // جلب المهام لو حالتها idle
+      if (tasksStatus === "idle") {
+        dispatch(fetchTasks(user.uid));
+      }
+    }
+  }, [user, dispatch, coursesStatus, tasksStatus]); // ✅ الاعتماديات الصحيحة
+
+  // ✅ عرض Loader أثناء التحميل
+  if (authLoading || coursesStatus === "loading" || tasksStatus === "loading") {
+    return <PageLoader message="جاري تحميل بياناتك..." />;
+  }
+
+  // ✅ توجيه المستخدم غير المسجّل
+  if (!user) {
+    return (
+      <Container sx={{ padding: { xs: "20px", md: "40px" }, mt: { xs: "45px", md: "0px" } }}>
+        <div className="auth-redirect">
+          <h2>🔐 Please login to view your dashboard</h2>
+          <Link to="/login" className="btn btn-primary">Go to Login</Link>
+        </div>
+      </Container>
+    );
+  }
 
   // Calculate overall statistics
   const totalCourses = courses.length;
@@ -213,7 +255,7 @@ export default function Dashboard() {
           </motion.div>
         </motion.div>
 
-        {/* Welcome Message */}
+        {/* Welcome Message / Study Tips */}
         <motion.div
           className="welcome-section"
           initial={{ opacity: 0, y: 20 }}
@@ -227,29 +269,14 @@ export default function Dashboard() {
             initial="hidden"
             animate="visible"
           >
-            <motion.div
-              className="tip"
-              variants={itemVariants}
-              style={{ width: "90%" }}
-            >
-              <strong>Consistency is Key:</strong> Study a little bit every day
-              rather than cramming.
+            <motion.div className="tip" variants={itemVariants} style={{ width: "90%" }}>
+              <strong>Consistency is Key:</strong> Study a little bit every day rather than cramming.
             </motion.div>
-            <motion.div
-              className="tip"
-              variants={itemVariants}
-              style={{ width: "90%" }}
-            >
-              <strong>Track Progress:</strong> Keep your courses updated to stay
-              motivated.
+            <motion.div className="tip" variants={itemVariants} style={{ width: "90%" }}>
+              <strong>Track Progress:</strong> Keep your courses updated to stay motivated.
             </motion.div>
-            <motion.div
-              className="tip"
-              variants={itemVariants}
-              style={{ width: "90%" }}
-            >
-              <strong>Plan Your Tasks:</strong> Break down your study into
-              manageable tasks.
+            <motion.div className="tip" variants={itemVariants} style={{ width: "90%" }}>
+              <strong>Plan Your Tasks:</strong> Break down your study into manageable tasks.
             </motion.div>
           </motion.div>
         </motion.div>
