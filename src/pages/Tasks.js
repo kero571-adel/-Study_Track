@@ -360,7 +360,7 @@ export default function Tasks() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <p>...</p>
+              <p>No tasks today</p>
             </motion.div>
           ) : (
             <motion.div
