@@ -329,6 +329,7 @@ body {
 
 .summary-card-content {
   flex: 1;
+  text-align: center;
 }
 
 .summary-card-content h3 {
@@ -340,7 +341,7 @@ body {
 }
 
 .summary-card-number {
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: 700;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;

@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import PageLoader from "../components/PageLoader";
 import TaskItem from "../components/TaskItem";
-// ✅ استيراد الـ Async Thunks الجديدة
 import {
   fetchTasks,
   addTaskAsync,
@@ -11,26 +10,26 @@ import {
   deleteTaskAsync,
 } from "../redux/store";
 import { motion } from "framer-motion";
-import { Container } from "@mui/material";
-// ✅ استيراد الهوك الخاص بالمصادقة
+import { Container, FormHelperText } from "@mui/material";
 import { useAuth } from "../context/AuthContext";
 
 export default function Tasks() {
   const dispatch = useDispatch();
-  const { user, loading: authLoading } = useAuth(); // ✅ جلب المستخدم وحالة التحميل
-
+  const { user, loading: authLoading } = useAuth();
   const tasks = useSelector((state) => state.tasks.items);
-  const tasksStatus = useSelector((state) => state.tasks.status); // ✅ حالة الجلب من Redux
+  const tasksStatus = useSelector((state) => state.tasks.status);
 
   const [formData, setFormData] = useState({
     title: "",
-    date: "",
+    startDate: "",
+    endDate: "",
   });
-  const [error, setError] = useState("");
-  const [filter, setFilter] = useState("today"); // all, today, overdue, completed
-  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ حالة التحميل للزر
 
-  // ✅ جلب التاسكات من Firebase أول ما الصفحة تفتح والمستخدم مسجّل
+  const [error, setError] = useState("");
+  const [filter, setFilter] = useState("today");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // جلب المهام من Firebase
   useEffect(() => {
     if (user && tasksStatus === "idle") {
       dispatch(fetchTasks(user.uid));
@@ -39,10 +38,8 @@ export default function Tasks() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -53,8 +50,16 @@ export default function Tasks() {
       setError("Task title is required");
       return;
     }
-    if (!formData.date) {
-      setError("Due date is required");
+    if (!formData.startDate) {
+      setError("Start date is required");
+      return;
+    }
+    if (!formData.endDate) {
+      setError("End date is required");
+      return;
+    }
+    if (new Date(formData.endDate) < new Date(formData.startDate)) {
+      setError("End date must be after start date");
       return;
     }
     if (!user) {
@@ -64,33 +69,31 @@ export default function Tasks() {
 
     setIsSubmitting(true);
     try {
-      // ✅ إرسال التاسك لـ Firebase عبر Redux Thunk
+      // ✅ إرسال التواريخ كنصوص "YYYY-MM-DD" لتجنب مشاكل الـ timezone
+      const taskData = {
+        title: formData.title.trim(),
+        startDate: formData.startDate, // نص: "2024-04-10"
+        endDate: formData.endDate, // نص: "2024-04-15"
+        completed: false,
+      };
+
       await dispatch(
-        addTaskAsync({
-          userId: user.uid,
-          data: {
-            // ✅ أضف "data:" هنا
-            title: formData.title.trim(),
-            date: formData.date,
-          },
-        })
-      ).unwrap(); // ✅ لالتقاط الأخطاء من Firebase
-      setFormData({ title: "", date: "" });
+        addTaskAsync({ userId: user.uid, data: taskData })
+      ).unwrap();
+      setFormData({ title: "", startDate: "", endDate: "" });
     } catch (err) {
       setError("Failed to add task: " + err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const handleToggleComplete = async (taskId) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task || !user) return;
-
     try {
       await dispatch(
         toggleTaskCompleteAsync({
-          userId: user.uid, // ✅ ضروري لتحديد مسار المستخدم في Firestore
+          userId: user.uid,
           taskId,
           completed: !task.completed,
         })
@@ -106,7 +109,7 @@ export default function Tasks() {
       try {
         await dispatch(
           deleteTaskAsync({
-            userId: user.uid, // ✅ ضروري لتحديد مسار المستخدم في Firestore
+            userId: user.uid,
             taskId,
           })
         ).unwrap();
@@ -116,57 +119,81 @@ export default function Tasks() {
     }
   };
 
-  // Filter tasks based on selected filter
-  const getFilteredTasks = () => {
-    const today = new Date().toDateString();
-
-    switch (filter) {
-      case "today":
-        return tasks.filter((t) => new Date(t.date).toDateString() === today);
-      case "overdue":
-        return tasks.filter(
-          (t) => !t.completed && new Date(t.date) < new Date()
-        );
-      case "completed":
-        return tasks.filter((t) => t.completed);
-      default:
-        return tasks;
+  // ✅ دالة مساعدة: هل المهمة متأخرة؟ (تدعم القديم والجديد)
+  // ✅ دالة لتحويل التاريخ النصي لـ Date للمقارنة
+  const parseDate = (dateString) => {
+    if (!dateString) return null;
+    if (
+      typeof dateString === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(dateString)
+    ) {
+      const [year, month, day] = dateString.split("-");
+      return new Date(year, month - 1, day); // شهر يبدأ من 0
     }
+    return new Date(dateString);
   };
 
+  // ✅ هل المهمة متأخرة؟ (تدعم القديم والجديد)
+  const isTaskOverdue = (task) => {
+    if (task.completed) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (task.endDate) return parseDate(task.endDate) < today;
+    if (task.dueDate) return parseDate(task.dueDate) < today;
+    if (task.date) return parseDate(task.date) < today; // fallback للقديم
+    return false;
+  };
+
+  // ✅ هل المهمة ضمن اليوم؟
+  const isTaskToday = (task) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (task.startDate && task.endDate) {
+      const start = parseDate(task.startDate);
+      const end = parseDate(task.endDate);
+      return start && end && today >= start && today <= end;
+    }
+    const taskDate = parseDate(task.endDate || task.dueDate || task.date);
+    return taskDate && taskDate.getTime() === today.getTime();
+  };
+  // ✅ فلتر المهام - محدث لدعم جميع تنسيقات التواريخ
+ const getFilteredTasks = () => {
+  return tasks.filter((t) => {
+    if (filter === "completed") return t.completed;
+    if (filter === "all") return true;
+    if (filter === "today") return !t.completed && isTaskToday(t);
+    if (filter === "overdue") return isTaskOverdue(t);
+    return true;
+  });
+};
   const filteredTasks = getFilteredTasks();
   const completedCount = tasks.filter((t) => t.completed).length;
-  const overdueCount = tasks.filter(
-    (t) => !t.completed && new Date(t.date) < new Date()
-  ).length;
+
+  // ✅ إصلاح overdueCount ليدعم جميع تنسيقات التواريخ
+const overdueCount = tasks.filter((t) => isTaskOverdue(t)).length;
 
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-        delayChildren: 0.1,
-      },
+      transition: { staggerChildren: 0.05, delayChildren: 0.1 },
     },
   };
 
   const itemVariants = {
     hidden: { opacity: 0, x: -20 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.3 },
-    },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
   };
 
-  // ✅ عرض شاشة تحميل أثناء انتظار المصادقة أو جلب البيانات
+  // عرض Loader
   if (authLoading || tasksStatus === "loading") {
     return <PageLoader />;
   }
 
-  // ✅ إذا لم يكن المستخدم مسجلاً، اعرض رسالة التوجيه
+  // توجيه المستخدم غير المسجّل
   if (!user) {
     return (
       <Container
@@ -268,7 +295,6 @@ export default function Tasks() {
           {/* Add Task Form */}
           <div className="task-form-section">
             <h2>Add New Task</h2>
-
             {error && (
               <motion.div
                 className="alert alert-error"
@@ -279,7 +305,6 @@ export default function Tasks() {
                 ✕ {error}
               </motion.div>
             )}
-
             <form onSubmit={handleSubmit} className="task-form">
               <input
                 type="text"
@@ -289,21 +314,41 @@ export default function Tasks() {
                 placeholder="Task title (e.g., Complete Chapter 5)"
                 className="form-input"
               />
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                className="form-input"
-              />
+
+              {/* حقول التواريخ */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "12px",
+                }}
+              >
+                <input
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="Start date"
+                />
+                <input
+                  type="date"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="End date"
+                  min={formData.startDate}
+                />
+              </div>
               <motion.button
                 type="submit"
                 className="btn btn-primary"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                disabled={isSubmitting} // ✅ تعطيل الزر أثناء الإرسال
+                disabled={isSubmitting}
               >
-                {isSubmitting ? "Adding..." : "Add Task"} {/* ✅ نص متغير */}
+                {isSubmitting ? "Adding..." : "Add Task"}
               </motion.button>
             </form>
           </div>
@@ -323,14 +368,6 @@ export default function Tasks() {
             >
               Today
             </motion.button>
-            <motion.button
-              className={`filter-btn ${filter === "all" ? "active" : ""}`}
-              onClick={() => setFilter("all")}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              All ({tasks.length})
-            </motion.button>
             {overdueCount > 0 && (
               <motion.button
                 className={`filter-btn ${filter === "overdue" ? "active" : ""}`}
@@ -349,9 +386,16 @@ export default function Tasks() {
             >
               Completed ({completedCount})
             </motion.button>
+            <motion.button
+              className={`filter-btn ${filter === "all" ? "active" : ""}`}
+              onClick={() => setFilter("all")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              All ({tasks.length})
+            </motion.button>
           </motion.div>
 
-          {/* Tasks List */}
           {/* Tasks List */}
           {filteredTasks.length === 0 ? (
             <motion.div
@@ -360,7 +404,15 @@ export default function Tasks() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <p>No tasks today</p>
+              <p>
+                {filter === "all" &&
+                  "📝 No tasks yet. Create one to get started!"}
+                {filter === "today" &&
+                  "📝 No tasks for today. Enjoy your break!"}
+                {filter === "overdue" &&
+                  "✓ No overdue tasks. Great job staying on track!"}
+                {filter === "completed" && "📝 No completed tasks yet."}
+              </p>
             </motion.div>
           ) : (
             <motion.div
@@ -368,24 +420,29 @@ export default function Tasks() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              key={`${filter}-${tasks.length}`} // ✅ مفتاح إجباري لإعادة الأنيميشن
+              key={`${filter}-${tasks.length}`}
             >
-              {filteredTasks.map((task) => (
-                <motion.div
-                  key={task.id}
-                  variants={itemVariants}
-                  // ✅ أضف هذه الخصائص عشان تضمن ظهور العنصر
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <TaskItem
-                    task={task}
-                    onToggle={handleToggleComplete}
-                    onDelete={handleDeleteTask}
-                  />
-                </motion.div>
-              ))}
+              {filteredTasks.map((task) => {
+                // ✅ حساب حالة التأخير لكل مهمة
+                const taskIsOverdue = isTaskOverdue(task);
+
+                return (
+                  <motion.div
+                    key={task.id}
+                    variants={itemVariants}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <TaskItem
+                      task={task}
+                      onToggle={handleToggleComplete}
+                      onDelete={handleDeleteTask}
+                      isOverdue={taskIsOverdue}
+                    />
+                  </motion.div>
+                );
+              })}
             </motion.div>
           )}
         </motion.div>
